@@ -4,9 +4,6 @@
 #include "util/vulkan.h"
 #include "util/window.h"
 
-// VULKAN!
-#include <vulkan/vulkan.h>
-
 void check(VkResult r);
 
 int main() {
