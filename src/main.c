@@ -1,3 +1,12 @@
+/*
+ * Simple Vulkan application
+ * 
+ * Copyright (c) 2016 by Mathias Johansson
+ * 
+ * This code is licensed under the MIT license 
+ * 		https://opensource.org/licenses/MIT
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
