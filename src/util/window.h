@@ -8,6 +8,7 @@
 extern bool isClosing;
 
 void openWindow();
+void prepRender();
 void tickWindow();
 void quitWindow();
 
