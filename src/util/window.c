@@ -16,7 +16,6 @@
 
 // VULKAN
 #include "util/vulkan.h"
-#include <vulkan/vulkan.h>
 
 bool isClosing = false;
 VkSurfaceKHR surface;
@@ -67,6 +66,10 @@ void openWindow() {
 		instance, &surfaceCreateInfo, NULL, &surface
 	);
 
+	// VkFormat colorFormat;
+	// unsigned formatCount = 0;
+	// vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GPUs[0], surface, &formatCount);
+
 	// Create a swapchain
 	VkSwapchainCreateInfoKHR swapCreateInfo = {
 		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, 
@@ -89,7 +92,7 @@ void openWindow() {
 		swapViews[i] = (VkImageViewCreateInfo) {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 
 			NULL, 0, swapImages[i], VK_IMAGE_VIEW_TYPE_2D, 
-			VK_FORMAT_R8G8B8A8_SINT, {
+			VK_FORMAT_R8G8B8_UNORM, {
 				VK_COMPONENT_SWIZZLE_R, 
 				VK_COMPONENT_SWIZZLE_G, 
 				VK_COMPONENT_SWIZZLE_B, 

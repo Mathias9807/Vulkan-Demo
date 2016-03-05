@@ -16,6 +16,8 @@
 
 extern VkInstance		instance;
 extern VkDevice			device;
+extern VkPhysicalDevice GPUs[16]; // Future proof code
+extern unsigned 		numGPUs;
 
 extern VkQueue			queue;
 extern VkCommandPool	comPool;
