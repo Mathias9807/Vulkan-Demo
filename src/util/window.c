@@ -9,10 +9,8 @@
 
 #include <stdio.h>
 #include <malloc.h>
+#include <string.h>
 #include "window.h"
-
-// Windowing
-#include <xcb/xcb.h>
 
 // VULKAN
 #include "util/vulkan.h"
@@ -21,12 +19,31 @@ bool isClosing = false;
 VkSurfaceKHR surface;
 unsigned nextImage = 0;
 
+#ifdef XCB_WINDOWING
 xcb_connection_t* con;
 xcb_screen_t* screen;
 xcb_window_t win;
 xcb_intern_atom_reply_t* atomWMDeleteWindow;
+#elif defined(X11_WINDOWING)
+Display* d;
+Window w;
+XEvent e;
+#endif
 
 void openWindow() {
+#ifdef X11_WINDOWING
+	d = XOpenDisplay(NULL);
+
+	int s = DefaultScreen(d);
+
+	w = XCreateSimpleWindow(d, RootWindow(d, s), 
+		0, 0, 800, 600, 1, BlackPixel(d, s), WhitePixel(d, s)
+	);
+
+	XSelectInput(d, w, ExposureMask | KeyPressMask);
+	XMapWindow(d, w);
+
+#elif defined(XCB_WINDOWING)
 	con = xcb_connect(NULL, NULL);
 	screen = xcb_setup_roots_iterator(xcb_get_setup(con)).data;
 	win = xcb_generate_id(con);
@@ -62,9 +79,20 @@ void openWindow() {
 		NULL, 0, con, win
 	};
 
-	vkCreateXcbSurfaceKHR(
+	check(vkCreateXcbSurfaceKHR(
 		instance, &surfaceCreateInfo, NULL, &surface
-	);
+	));
+#endif
+
+	unsigned numFormats = 16;
+	VkSurfaceFormatKHR formats[numFormats];
+	memset(formats, 0, sizeof(formats));
+	for (int i = 0; i < numFormats; i++)
+		formats[i].format = VK_FORMAT_R8G8B8_UINT;
+
+	// check(vkGetPhysicalDeviceSurfaceFormatsKHR(
+	// 	GPUs[0], surface, &numFormats, formats
+	// ));
 
 	// VkFormat colorFormat;
 	// unsigned formatCount = 0;
@@ -72,19 +100,22 @@ void openWindow() {
 
 	// Create a swapchain
 	VkSwapchainCreateInfoKHR swapCreateInfo = {
-		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, 
-		NULL, 0, surface, 1, VK_FORMAT_R8G8B8_UNORM, 
-		VK_COLORSPACE_SRGB_NONLINEAR_KHR, {800, 600}, 
-		1, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-		VK_SHARING_MODE_EXCLUSIVE, 0, NULL, 0, 0, 
-		VK_PRESENT_MODE_IMMEDIATE_KHR, 
+		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, NULL, 0,
+		surface, 1, formats[0].format, 
+		formats[0].colorSpace, {800, 600}, 
+		1, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+			| VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
+		VK_SHARING_MODE_EXCLUSIVE, 0, NULL, 
+		VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, 
+		VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR, 
+		VK_PRESENT_MODE_IMMEDIATE_KHR, true, VK_NULL_HANDLE
 	};
-	vkCreateSwapchainKHR(device, &swapCreateInfo, NULL, &swap);
+	check(vkCreateSwapchainKHR(device, &swapCreateInfo, NULL, &swap));
 
 	// Get actual images for the swapchain
-	vkGetSwapchainImagesKHR(
+	check(vkGetSwapchainImagesKHR(
 		device, swap, &swapCount, swapImages
-	);
+	));
 
 	printf("Swapchain length: %d\n", swapCount);
 
@@ -92,7 +123,7 @@ void openWindow() {
 		swapViews[i] = (VkImageViewCreateInfo) {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 
 			NULL, 0, swapImages[i], VK_IMAGE_VIEW_TYPE_2D, 
-			VK_FORMAT_R8G8B8_UNORM, {
+			formats[0].format, {
 				VK_COMPONENT_SWIZZLE_R, 
 				VK_COMPONENT_SWIZZLE_G, 
 				VK_COMPONENT_SWIZZLE_B, 
@@ -104,15 +135,15 @@ void openWindow() {
 		};
 
 		VkImageView view;
-		vkCreateImageView(device, &swapViews[i], NULL, &view);
+		check(vkCreateImageView(device, &swapViews[i], NULL, &view));
 	}
 }
 
 void prepRender() {
-	vkAcquireNextImageKHR(
-		device, swap, UINT64_MAX, VK_NULL_HANDLE, 
+	check(vkAcquireNextImageKHR(
+		device, swap, 1000000000000, VK_NULL_HANDLE, 
 		VK_NULL_HANDLE, &nextImage
-	);
+	));
 }
 
 void tickWindow() {
@@ -120,8 +151,13 @@ void tickWindow() {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 
 		NULL, 0, NULL, 1, &swap, &nextImage, NULL
 	};
-	vkQueuePresentKHR(queue, &presentInfo);
+	check(vkQueuePresentKHR(queue, &presentInfo));
 
+#ifdef X11_WINDOWING
+	XNextEvent(d, &e);
+
+
+#elif XCB_WINDOWING
 	xcb_flush(con);
 
 	xcb_generic_event_t* event;
@@ -129,11 +165,15 @@ void tickWindow() {
 		// Close at first opportunity
 		isClosing = true;
 	}
+#endif
 }
 
 void quitWindow() {
+#ifdef XCB_WINDOWING
 	xcb_destroy_window(con, win);
 
 	xcb_disconnect(con);
+#elif defined(X11_WINDOWING)
+#endif
 }
 

@@ -2,19 +2,21 @@ src/util/window.o: src/util/window.c /usr/include/stdc-predef.h \
  /usr/include/stdio.h /usr/include/features.h /usr/include/sys/cdefs.h \
  /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
  /usr/include/gnu/stubs-64.h \
- /usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stddef.h \
+ /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stddef.h \
  /usr/include/bits/types.h /usr/include/bits/typesizes.h \
  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
- /usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdarg.h \
+ /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdarg.h \
  /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
- /usr/include/bits/stdio.h /usr/include/malloc.h src/util/window.h \
- /usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdbool.h \
- src/util/vulkan.h /usr/include/vulkan/vulkan.h \
+ /usr/include/bits/stdio.h /usr/include/malloc.h /usr/include/string.h \
+ /usr/include/bits/string.h /usr/include/bits/string2.h \
+ /usr/include/endian.h /usr/include/bits/endian.h src/util/window.h \
+ /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdbool.h \
+ src/util/vulkan.h src/util/window.h /usr/include/vulkan/vulkan.h \
  /usr/include/vulkan/vk_platform.h \
- /usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdint.h \
- /usr/include/stdint.h /usr/include/bits/wchar.h \
- /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
- /usr/include/inttypes.h
+ /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdint.h \
+ /usr/include/stdint.h /usr/include/bits/wchar.h /usr/include/X11/Xlib.h \
+ /usr/include/sys/types.h /usr/include/time.h /usr/include/X11/X.h \
+ /usr/include/X11/Xfuncproto.h /usr/include/X11/Xosdefs.h
 
 /usr/include/stdc-predef.h:
 
@@ -30,7 +32,7 @@ src/util/window.o: src/util/window.c /usr/include/stdc-predef.h \
 
 /usr/include/gnu/stubs-64.h:
 
-/usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stddef.h:
+/usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stddef.h:
 
 /usr/include/bits/types.h:
 
@@ -42,7 +44,7 @@ src/util/window.o: src/util/window.c /usr/include/stdc-predef.h \
 
 /usr/include/wchar.h:
 
-/usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdarg.h:
+/usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdarg.h:
 
 /usr/include/bits/stdio_lim.h:
 
@@ -52,26 +54,42 @@ src/util/window.o: src/util/window.c /usr/include/stdc-predef.h \
 
 /usr/include/malloc.h:
 
+/usr/include/string.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+/usr/include/endian.h:
+
+/usr/include/bits/endian.h:
+
 src/util/window.h:
 
-/usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdbool.h:
+/usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdbool.h:
 
 src/util/vulkan.h:
+
+src/util/window.h:
 
 /usr/include/vulkan/vulkan.h:
 
 /usr/include/vulkan/vk_platform.h:
 
-/usr/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/stdint.h:
+/usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdint.h:
 
 /usr/include/stdint.h:
 
 /usr/include/bits/wchar.h:
 
-/usr/include/GLFW/glfw3.h:
+/usr/include/X11/Xlib.h:
 
-/usr/include/GL/gl.h:
+/usr/include/sys/types.h:
 
-/usr/include/GL/glext.h:
+/usr/include/time.h:
 
-/usr/include/inttypes.h:
+/usr/include/X11/X.h:
+
+/usr/include/X11/Xfuncproto.h:
+
+/usr/include/X11/Xosdefs.h:

@@ -14,20 +14,25 @@
 #include <string.h>
 
 VkInstance		instance;
+char			layers[256][16];
+char			extensions[256][16];
+
+VkDebugReportCallbackEXT callback;
+
 VkDevice		device;
-VkPhysicalDevice GPUs[16]; // Future proof code
+VkPhysicalDevice*	GPUs;
 unsigned 		numGPUs = 0;
 
 VkQueue			queue;
-VkCommandPool	comPool;
-VkCommandBuffer	comBuffer;
+VkCommandPool		comPool;
+VkCommandBuffer		comBuffer;
 
-VkSwapchainKHR	swap;
+VkSwapchainKHR		swap;
 VkImage			swapImages[4];
-VkImageViewCreateInfo		swapViews[4];
+VkImageViewCreateInfo	swapViews[4];
 unsigned		swapCount;
 
-float queuePriorities = 0;
+float			queuePriorities = 0;
 
 void createInstance(char* name) {
 	VkApplicationInfo appInfo = {
@@ -35,20 +40,75 @@ void createInstance(char* name) {
 		NULL, name, 1, name, 1, VK_MAKE_VERSION(1, 0, 1)
 	};
 
-	unsigned numExts = 8;
-	VkExtensionProperties exts[8];
-	memset(exts, 0, sizeof(exts));
-	vkEnumerateInstanceExtensionProperties(NULL, &numExts, exts);
+	// Enumerate all available layers
+	unsigned numLayers = 64;
+	VkLayerProperties foundLayers[64] = {0};
+	check(vkEnumerateInstanceLayerProperties(&numLayers, foundLayers));
+	printf("Found %d layers\n", numLayers);
 
-	const char* used[3];
-	used[0] = VK_KHR_SURFACE_EXTENSION_NAME;
-	used[1] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
-	used[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+	unsigned numExts = 16;
+	VkExtensionProperties exts[16];
+	memset(exts, 0, sizeof(exts));
+	check(vkEnumerateInstanceExtensionProperties(NULL, &numExts, exts));
+	printf("Found %d extensions\n", numExts);
+
+	const char* usedExts[numExts];
+	int extI = 0;
+	for (int i = 0; i < numExts; i++) {
+		if (!strcmp(exts[i].extensionName, 
+				"VK_EXT_debug_report")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses extension %s\n", exts[i].extensionName);
+			continue;
+		}
+		if (!strcmp(exts[i].extensionName, 
+				"VK_KHR_surface")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses extension %s\n", exts[i].extensionName);
+			continue;
+		}
+		if (!strcmp(exts[i].extensionName, 
+				"VK_KHR_xcb_surface")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses extension %s\n", exts[i].extensionName);
+			continue;
+		}
+	}
+	for (int i = 0; i < extI; i++) 
+		memcpy(extensions[i], usedExts[i], 256);
+
+	// Use layers if available
+	const char* usedLayers[numLayers];
+	int j = 0;
+	for (int i = 0; i < numLayers; i++) {
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_parameter_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_object_tracker")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_core_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_standard_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses layer %s\n", foundLayers[i].layerName);
+		}
+	}
+	for (int i = 0; i < j; i++) 
+		memcpy(layers[i], usedLayers[i], 256);
 	
 	VkInstanceCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 
-		NULL, 0, &appInfo, 0, NULL, 
-		3, used
+		NULL, 0, &appInfo, j, usedLayers, 
+		extI, usedExts
 	};
 
 	check(vkCreateInstance(&createInfo, NULL, &instance));
@@ -56,25 +116,95 @@ void createInstance(char* name) {
 
 void getDevice() {
 	// List all graphics and compute devices
+	// First get number of devices
+	check(vkEnumeratePhysicalDevices(instance, &numGPUs, NULL));
+	printf("Found %d physical device[s]\n", numGPUs);
+	
+	// Then get the device handles themselves
+	GPUs = calloc(numGPUs, sizeof(VkPhysicalDevice));
 	check(vkEnumeratePhysicalDevices(instance, &numGPUs, GPUs));
 
 	// Pretend to look at the actual features
 	VkPhysicalDeviceFeatures pDevFeatures;
 	vkGetPhysicalDeviceFeatures(GPUs[0], &pDevFeatures);
 
+	// Query the device's available layers
+	unsigned numLayers = 16;
+	VkLayerProperties foundLayers[16];
+	memset(foundLayers, 0, sizeof(foundLayers));
+	check(vkEnumerateDeviceLayerProperties(GPUs[0], &numLayers, foundLayers));
+	printf("Device has %d layers\n", numLayers);
+
 	// Query the device's available extensions
 	VkExtensionProperties exts[8];
 	memset(exts, 0, sizeof(exts));
 	unsigned numExts = 8;
-	vkEnumerateDeviceExtensionProperties(GPUs[0], NULL, &numExts, exts);
+	check(vkEnumerateDeviceExtensionProperties(GPUs[0], NULL, &numExts, exts));
+	printf("Device has %d extensions\n", numExts);
 
-	// Ignore them and just hardcode it instead
-	const char* used[1];
-	used[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+	// Print available extensions
+	for (int i = 0; i < numExts; i++)
+		printf("%s\n", exts[i].extensionName);
+
+	const char* usedExts[numExts];
+	int extI = 0;
+	for (int i = 0; i < numExts; i++) {
+		if (!strcmp(exts[i].extensionName, 
+				"VK_EXT_debug_report")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses device extension %s\n", exts[i].extensionName);
+			continue;
+		}
+		if (!strcmp(exts[i].extensionName, 
+				"VK_KHR_surface")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses device extension %s\n", exts[i].extensionName);
+			continue;
+		}
+		if (!strcmp(exts[i].extensionName, 
+				"VK_KHR_xcb_surface")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses device extension %s\n", exts[i].extensionName);
+			continue;
+		}
+		if (!strcmp(exts[i].extensionName, 
+				"VK_KHR_swapchain")) {
+			usedExts[extI++] = exts[i].extensionName;
+			printf("Uses device extension %s\n", exts[i].extensionName);
+			continue;
+		}
+	}
+
+	const char* usedLayers[numLayers];
+	int j = 0;
+	for (int i = 0; i < numLayers; i++) {
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_parameter_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses device layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_object_tracker")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses device layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_core_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses device layer %s\n", foundLayers[i].layerName);
+		}
+		if (!strcmp(foundLayers[i].layerName, 
+				"VK_LAYER_LUNARG_standard_validation")) {
+			usedLayers[j++] = foundLayers[i].layerName;
+			printf("Uses device layer %s\n", foundLayers[i].layerName);
+		}
+	}
 
 	// Get queue family properties
-	unsigned numQFams = 16;
-	VkQueueFamilyProperties famProps[16];
+	unsigned numQFams;
+	vkGetPhysicalDeviceQueueFamilyProperties(GPUs[0], &numQFams, NULL);
+
+	VkQueueFamilyProperties famProps[numQFams];
 	vkGetPhysicalDeviceQueueFamilyProperties(
 		GPUs[0], &numQFams, famProps
 	);
@@ -94,8 +224,8 @@ void getDevice() {
 
 	VkDeviceCreateInfo devCreateInfo = {
 		VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 
-		NULL, 0, 1, &devQueueCreateInfo, 0, NULL, 
-		1, used, &pDevFeatures
+		NULL, 0, 1, &devQueueCreateInfo, j, usedLayers, 
+		extI, usedExts, &pDevFeatures
 	};
 
 	// Create the logical device
@@ -107,7 +237,28 @@ void getDevice() {
 	vkGetDeviceQueue(device, graphicsQueueFam, 0, &queue);
 
 	// Wait for completion, we've got time
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
+}
+
+static VkBool32 debugCallback(VkDebugReportFlagsEXT flags,
+	VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location,
+	int32_t code, const char* layerPrefix, const char* msg, void* userData) {
+	printf("%s\n", msg);
+	return VK_FALSE;
+}
+
+void setupDebugging() {
+	VkDebugReportCallbackCreateInfoEXT createInfo = {
+		VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, 0,
+		VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT
+			| VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
+			| VK_DEBUG_REPORT_INFORMATION_BIT_EXT,
+		(PFN_vkDebugReportCallbackEXT) debugCallback, NULL};
+
+	PFN_vkCreateDebugReportCallbackEXT f = (PFN_vkCreateDebugReportCallbackEXT)
+		vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
+
+	if (f != NULL) (*f)(instance, &createInfo, NULL, &callback);
 }
 
 void createCommandPool() {
@@ -118,7 +269,7 @@ void createCommandPool() {
 	
 	check(vkCreateCommandPool(device, &comPoolCreate, NULL, &comPool));
 
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
 }
 
 void createCommandBuffer() {
@@ -129,7 +280,7 @@ void createCommandBuffer() {
 
 	check(vkAllocateCommandBuffers(device, &comBufferInfo, &comBuffer));
 
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
 }
 
 void beginCommands() {
@@ -141,13 +292,13 @@ void beginCommands() {
 	
 	check(vkBeginCommandBuffer(comBuffer, &beginInfo));
 
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
 }
 
 void endCommands() {
 	check(vkEndCommandBuffer(comBuffer));
 
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
 }
 
 void submitCommandBuffer() {
@@ -159,7 +310,7 @@ void submitCommandBuffer() {
 
 	check(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
 
-	vkDeviceWaitIdle(device);
+	check(vkDeviceWaitIdle(device));
 }
 
 void destroyInstance() {

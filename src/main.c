@@ -18,6 +18,7 @@
 int main() {
 	// Create an instance of vulkan
 	createInstance("Vulkan");
+	setupDebugging();
 
 	getDevice();
 
@@ -29,13 +30,27 @@ int main() {
 	prepRender();
 
 	beginCommands();
-	VkClearColorValue clearColor = {
-		.int32 = {0, 127, INT32_MAX}
-	};
+
+	VkClearColorValue clearColor = {0};
+	memset(&clearColor, 1, sizeof(VkClearColorValue));
+
+	vkCmdPipelineBarrier(
+		comBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0, 0, NULL, 0, NULL, 0, NULL
+	);
+
 	vkCmdClearColorImage(
-		comBuffer, swapImages[nextImage], VK_IMAGE_LAYOUT_GENERAL, 
+		comBuffer, swapImages[nextImage], VK_IMAGE_LAYOUT_GENERAL,
 		&clearColor, 1, &swapViews[nextImage].subresourceRange
 	);
+
+	vkCmdPipelineBarrier(
+		comBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+		0, 0, NULL, 0, NULL, 0, NULL
+	);
+
 	endCommands();
 
 	submitCommandBuffer();
