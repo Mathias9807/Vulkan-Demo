@@ -11,16 +11,6 @@
 #define VULKAN_H
 
 
-#include "window.h"
-
-#ifdef XCB_WINDOWING
-#define VK_USE_PLATFORM_XCB_KHR
-#elif defined(X11_WINDOWING)
-#define VK_USE_PLATFORM_XLIB_KHR
-#else
-#error "Define XCB_WINDOWING or X11_WINDOWING"
-#endif
-
 #include <vulkan/vulkan.h>
 
 extern VkInstance		instance;
@@ -33,14 +23,6 @@ extern VkQueue			queue;
 extern VkCommandPool		comPool;
 extern VkCommandBuffer		comBuffer;
 
-extern VkSwapchainKHR		swap;
-extern VkSemaphore		preRenderSem;
-extern VkImage*			swapImages;
-extern VkImageView*		swapViews;
-extern VkImageViewCreateInfo*	swapViewInfos;
-extern unsigned			nextImage;
-extern unsigned			swapCount;
-
 void createInstance(char* name);
 void setupDebugging();
 void getDevice();
@@ -49,6 +31,8 @@ void createCommandBuffer();
 void beginCommands();
 void endCommands();
 void submitCommandBuffer();
+void transitionImage(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+void destroyDebugging();
 void destroyInstance();
 void check(VkResult r);
 

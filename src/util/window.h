@@ -14,8 +14,6 @@
 #include <stdbool.h>
 #include "util/vulkan.h"
 
-#define X11_WINDOWING
-
 // Windowing
 #ifdef X11_WINDOWING
 #include <X11/Xlib.h> 

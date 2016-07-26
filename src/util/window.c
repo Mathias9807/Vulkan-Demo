@@ -17,6 +17,7 @@
 
 bool isClosing = false;
 VkSurfaceKHR surface;
+VkSemaphore preRenderSem;
 unsigned nextImage = 0;
 
 #ifdef XCB_WINDOWING
@@ -42,6 +43,12 @@ void openWindow() {
 
 	XSelectInput(d, w, ExposureMask | KeyPressMask);
 	XMapWindow(d, w);
+
+	VkXlibSurfaceCreateInfoKHR surfaceCreate = {
+		VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR, NULL,
+		0, d, w
+	};
+	vkCreateXlibSurfaceKHR(instance, &surfaceCreate, NULL, &surface);
 
 #elif defined(XCB_WINDOWING)
 	con = xcb_connect(NULL, NULL);
@@ -84,35 +91,76 @@ void openWindow() {
 	));
 #endif
 
-	unsigned numFormats = 16;
+	// Get all supported formats
+	unsigned numFormats;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(GPUs[0], surface, &numFormats, NULL);
+
 	VkSurfaceFormatKHR formats[numFormats];
-	memset(formats, 0, sizeof(formats));
+	check(vkGetPhysicalDeviceSurfaceFormatsKHR(
+		GPUs[0], surface, &numFormats, formats
+	));
+
+	// Select a format
+	VkSurfaceFormatKHR* format = formats;
 	for (int i = 0; i < numFormats; i++)
-		formats[i].format = VK_FORMAT_R8G8B8_UINT;
+		if (formats[i].format == VK_FORMAT_R8G8B8_UINT) {
+			format = &formats[i];
+			break;
+		}
 
-	// check(vkGetPhysicalDeviceSurfaceFormatsKHR(
-	// 	GPUs[0], surface, &numFormats, formats
-	// ));
+	// Get surface capabilities
+	VkSurfaceCapabilitiesKHR capabilities;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GPUs[0], surface, &capabilities);
+	printf("Surface requires at least %d image[s]\n", 
+		capabilities.minImageCount);
 
-	// VkFormat colorFormat;
-	// unsigned formatCount = 0;
-	// vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GPUs[0], surface, &formatCount);
+	// Is surface presentation supported?
+	VkBool32 supported;
+	vkGetPhysicalDeviceSurfaceSupportKHR(GPUs[0], queueFam, surface, &supported);
+	if (supported) printf("Surface presentation is supported by this device\n");
+	else printf("Surface presentation is NOT supported by this device\n");
+
+	// Get present modes
+	unsigned numPresentModes;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(
+		GPUs[0], surface, &numPresentModes, NULL);
+
+	VkPresentModeKHR presentModes[numPresentModes];
+	vkGetPhysicalDeviceSurfacePresentModesKHR(
+		GPUs[0], surface, &numPresentModes, presentModes);
+
+	// Select a present mode
+	VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+	for (int i = 0; i < numPresentModes; i++)
+		if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+			presentMode = presentModes[i];
+			break;
+		}
+	for (int i = 0; i < numPresentModes; i++)
+		if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+			presentMode = presentModes[i];
+			break;
+		}
 
 	// Create a swapchain
 	VkSwapchainCreateInfoKHR swapCreateInfo = {
 		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, NULL, 0,
-		surface, 1, formats[0].format, 
-		formats[0].colorSpace, {800, 600}, 
+		surface, capabilities.minImageCount, format->format, 
+		format->colorSpace, capabilities.currentExtent, 
 		1, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 			| VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
 		VK_SHARING_MODE_EXCLUSIVE, 0, NULL, 
-		VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, 
+		capabilities.currentTransform, 
 		VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR, 
-		VK_PRESENT_MODE_IMMEDIATE_KHR, true, VK_NULL_HANDLE
+		presentMode, true, VK_NULL_HANDLE
 	};
 	check(vkCreateSwapchainKHR(device, &swapCreateInfo, NULL, &swap));
 
 	// Get actual images for the swapchain
+	vkGetSwapchainImagesKHR(device, swap, &swapCount, NULL);
+	swapImages = calloc(swapCount, sizeof(VkImage));
+	swapViews = calloc(swapCount, sizeof(VkImageView));
+	swapViewInfos = calloc(swapCount, sizeof(VkImageViewCreateInfo));
 	check(vkGetSwapchainImagesKHR(
 		device, swap, &swapCount, swapImages
 	));
@@ -120,28 +168,32 @@ void openWindow() {
 	printf("Swapchain length: %d\n", swapCount);
 
 	for (int i = 0; i < swapCount; i++) {
-		swapViews[i] = (VkImageViewCreateInfo) {
+		swapViewInfos[i] = (VkImageViewCreateInfo) {
 			VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 
 			NULL, 0, swapImages[i], VK_IMAGE_VIEW_TYPE_2D, 
-			formats[0].format, {
-				VK_COMPONENT_SWIZZLE_R, 
-				VK_COMPONENT_SWIZZLE_G, 
-				VK_COMPONENT_SWIZZLE_B, 
-				VK_COMPONENT_SWIZZLE_A
+			format->format, {
+				VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VK_COMPONENT_SWIZZLE_IDENTITY, 
+				VK_COMPONENT_SWIZZLE_IDENTITY
 			}, {
 				VK_IMAGE_ASPECT_COLOR_BIT, 
 				0, 1, 0, 1
 			}
 		};
 
-		VkImageView view;
-		check(vkCreateImageView(device, &swapViews[i], NULL, &view));
+		check(vkCreateImageView(device, &swapViewInfos[i], 
+			NULL, &swapViews[i]));
 	}
 }
 
 void prepRender() {
+	VkSemaphoreCreateInfo semInfo = {
+		VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, NULL, 0
+	};
+	vkCreateSemaphore(device, &semInfo, NULL, &preRenderSem);
 	check(vkAcquireNextImageKHR(
-		device, swap, 1000000000000, VK_NULL_HANDLE, 
+		device, swap, 1000000000000, preRenderSem, 
 		VK_NULL_HANDLE, &nextImage
 	));
 }

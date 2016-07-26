@@ -45,18 +45,19 @@ void createInstance(char* name) {
 	unsigned numLayers = 64;
 	VkLayerProperties foundLayers[64] = {0};
 	check(vkEnumerateInstanceLayerProperties(&numLayers, foundLayers));
-	printf("\nFound %d layers:\n", numLayers);
+	printf("Found %d layers:\n", numLayers);
 	for (int i = 0; i < numLayers; i++)
-		printf("%s\t", foundLayers[i].layerName);
+		printf("\t%s", foundLayers[i].layerName);
+	printf("\n\n");
 
 	unsigned numExts = 16;
 	VkExtensionProperties exts[16];
 	memset(exts, 0, sizeof(exts));
 	check(vkEnumerateInstanceExtensionProperties(NULL, &numExts, exts));
-	printf("\nFound %d extensions:\n", numExts);
+	printf("Found %d extensions:\n", numExts);
 	for (int i = 0; i < numExts; i++)
 		printf("%s\t", exts[i].extensionName);
-	printf("\n");
+	printf("\n\n");
 
 	const char* usedExts[numExts];
 	int extI = 0;
@@ -300,8 +301,7 @@ void createCommandBuffer() {
 void beginCommands() {
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 
-		NULL, 0, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, 
-		VK_TRUE, VK_NULL_HANDLE, VK_NULL_HANDLE
+		NULL, 0, NULL
 	};
 	
 	check(vkBeginCommandBuffer(comBuffer, &beginInfo));
@@ -310,6 +310,8 @@ void beginCommands() {
 }
 
 void endCommands() {
+	check(vkDeviceWaitIdle(device));
+
 	check(vkEndCommandBuffer(comBuffer));
 }
 
@@ -321,11 +323,48 @@ void submitCommandBuffer() {
 	};
 
 	check(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+
+	printf("Idling... ");
+	fflush(stdout);
+	check(vkQueueWaitIdle(queue));
+	printf("Done\n");
+}
+
+void transitionImage(VkImage image, VkImageLayout oldLayout,
+		VkImageLayout newLayout) {
+	VkImageMemoryBarrier barrier = {0};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	barrier.srcAccessMask = 0;
+	barrier.dstAccessMask = 0;
+	vkCmdPipelineBarrier(
+		comBuffer,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		0, 0, NULL, 0, NULL, 1, &barrier
+	);
+}
+
+void destroyDebugging() {
+	PFN_vkDestroyDebugReportCallbackEXT f = (PFN_vkDestroyDebugReportCallbackEXT)
+		vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+
+	if (f != NULL) (*f)(instance, callback, NULL);
+	printf("Removed debugging callbacks\n");
 }
 
 void destroyInstance() {
 	vkDestroyDevice(device, NULL);
 	vkDestroyInstance(instance, NULL);
+	printf("Closed vulkan instance\n");
 }
 
 void check(VkResult r) {

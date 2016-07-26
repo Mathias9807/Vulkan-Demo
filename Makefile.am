@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/
+AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/ -DXCB_WINDOWING
 AM_LDFLAGS = -L/usr/local/lib 
 
 bin_PROGRAMS = vulkan

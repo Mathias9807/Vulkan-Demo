@@ -266,7 +266,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
-AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/
+AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/ -DXCB_WINDOWING
 AM_LDFLAGS = -L/usr/local/lib 
 vulkan_LDADD = -lxcb -lX11 -lvulkan
 vulkan_SOURCES = src/main.c src/util/window.c src/util/window.h src/util/vulkan.c src/util/vulkan.h

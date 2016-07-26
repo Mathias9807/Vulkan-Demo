@@ -102,8 +102,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
-am_vulkan_OBJECTS = src/main.$(OBJEXT) src/util/window.$(OBJEXT) \
-	src/util/vulkan.$(OBJEXT)
+am_vulkan_OBJECTS = src/main.$(OBJEXT) src/util/vulkan.$(OBJEXT)
 vulkan_OBJECTS = $(am_vulkan_OBJECTS)
 vulkan_DEPENDENCIES =
 AM_V_P = $(am__v_P_$(V))
@@ -181,12 +180,12 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/mathias9807/Vulkan-Demo/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/mathias9807/Vulkan-Demo/image/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} /home/mathias9807/Vulkan-Demo/missing autoconf
-AUTOHEADER = ${SHELL} /home/mathias9807/Vulkan-Demo/missing autoheader
-AUTOMAKE = ${SHELL} /home/mathias9807/Vulkan-Demo/missing automake-1.15
+AUTOCONF = ${SHELL} /home/mathias9807/Vulkan-Demo/image/missing autoconf
+AUTOHEADER = ${SHELL} /home/mathias9807/Vulkan-Demo/image/missing autoheader
+AUTOMAKE = ${SHELL} /home/mathias9807/Vulkan-Demo/image/missing automake-1.15
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -208,7 +207,7 @@ LDFLAGS =
 LIBOBJS = 
 LIBS = 
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/mathias9807/Vulkan-Demo/missing makeinfo
+MAKEINFO = ${SHELL} /home/mathias9807/Vulkan-Demo/image/missing makeinfo
 MKDIR_P = /usr/bin/mkdir -p
 OBJEXT = o
 PACKAGE = vulkan
@@ -223,10 +222,10 @@ SET_MAKE =
 SHELL = /bin/sh
 STRIP = 
 VERSION = 1.0
-abs_builddir = /home/mathias9807/Vulkan-Demo
-abs_srcdir = /home/mathias9807/Vulkan-Demo
-abs_top_builddir = /home/mathias9807/Vulkan-Demo
-abs_top_srcdir = /home/mathias9807/Vulkan-Demo
+abs_builddir = /home/mathias9807/Vulkan-Demo/image
+abs_srcdir = /home/mathias9807/Vulkan-Demo/image
+abs_top_builddir = /home/mathias9807/Vulkan-Demo/image
+abs_top_srcdir = /home/mathias9807/Vulkan-Demo/image
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
@@ -245,7 +244,7 @@ host_alias =
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/mathias9807/Vulkan-Demo/install-sh
+install_sh = ${SHELL} /home/mathias9807/Vulkan-Demo/image/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -266,10 +265,10 @@ top_build_prefix =
 top_builddir = .
 top_srcdir = .
 AUTOMAKE_OPTIONS = foreign
-AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/ -DXCB_WINDOWING
-AM_LDFLAGS = -L/usr/local/lib 
-vulkan_LDADD = -lxcb -lX11 -lvulkan
-vulkan_SOURCES = src/main.c src/util/window.c src/util/window.h src/util/vulkan.c src/util/vulkan.h
+AM_CFLAGS = --pedantic -Wall -std=c99 -O2 -I./src/
+AM_LDFLAGS = 
+vulkan_LDADD = -lvulkan
+vulkan_SOURCES = src/main.c src/util/vulkan.c src/util/vulkan.h
 all: all-am
 
 .SUFFIXES:
@@ -362,8 +361,6 @@ src/util/$(am__dirstamp):
 src/util/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/util/$(DEPDIR)
 	@: > src/util/$(DEPDIR)/$(am__dirstamp)
-src/util/window.$(OBJEXT): src/util/$(am__dirstamp) \
-	src/util/$(DEPDIR)/$(am__dirstamp)
 src/util/vulkan.$(OBJEXT): src/util/$(am__dirstamp) \
 	src/util/$(DEPDIR)/$(am__dirstamp)
 
@@ -381,7 +378,6 @@ distclean-compile:
 
 include src/$(DEPDIR)/main.Po
 include src/util/$(DEPDIR)/vulkan.Po
-include src/util/$(DEPDIR)/window.Po
 
 .c.o:
 	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

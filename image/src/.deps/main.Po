@@ -13,18 +13,10 @@ src/main.o: src/main.c /usr/include/stdc-predef.h /usr/include/stdlib.h \
  /usr/include/bits/posix_opt.h /usr/include/bits/confname.h \
  /usr/include/string.h /usr/include/bits/string.h \
  /usr/include/bits/string2.h /usr/include/endian.h \
- /usr/include/bits/endian.h src/util/vulkan.h src/util/window.h \
- /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdbool.h \
- src/util/vulkan.h /usr/include/xcb/xcb.h /usr/include/sys/types.h \
- /usr/include/time.h \
- /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdint.h \
- /usr/include/stdint.h /usr/include/bits/wchar.h /usr/include/sys/uio.h \
- /usr/include/bits/uio.h /usr/include/pthread.h /usr/include/sched.h \
- /usr/include/bits/time.h /usr/include/bits/sched.h \
- /usr/include/bits/pthreadtypes.h /usr/include/bits/setjmp.h \
- /usr/include/xcb/xproto.h /usr/include/xcb/xcb.h \
+ /usr/include/bits/endian.h src/util/vulkan.h \
  /usr/include/vulkan/vulkan.h /usr/include/vulkan/vk_platform.h \
- src/util/window.h
+ /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdint.h \
+ /usr/include/stdint.h /usr/include/bits/wchar.h
 
 /usr/include/stdc-predef.h:
 
@@ -84,46 +76,12 @@ src/main.o: src/main.c /usr/include/stdc-predef.h /usr/include/stdlib.h \
 
 src/util/vulkan.h:
 
-src/util/window.h:
+/usr/include/vulkan/vulkan.h:
 
-/usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdbool.h:
-
-src/util/vulkan.h:
-
-/usr/include/xcb/xcb.h:
-
-/usr/include/sys/types.h:
-
-/usr/include/time.h:
+/usr/include/vulkan/vk_platform.h:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/6.1.1/include/stdint.h:
 
 /usr/include/stdint.h:
 
 /usr/include/bits/wchar.h:
-
-/usr/include/sys/uio.h:
-
-/usr/include/bits/uio.h:
-
-/usr/include/pthread.h:
-
-/usr/include/sched.h:
-
-/usr/include/bits/time.h:
-
-/usr/include/bits/sched.h:
-
-/usr/include/bits/pthreadtypes.h:
-
-/usr/include/bits/setjmp.h:
-
-/usr/include/xcb/xproto.h:
-
-/usr/include/xcb/xcb.h:
-
-/usr/include/vulkan/vulkan.h:
-
-/usr/include/vulkan/vk_platform.h:
-
-src/util/window.h:
