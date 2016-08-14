@@ -36,16 +36,17 @@ int main() {
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
-	imageInfo.format = VK_FORMAT_R8G8B8_UNORM;
+	imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 	imageInfo.tiling = VK_IMAGE_TILING_LINEAR;
-	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+		| VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	vkCreateImage(device, &imageInfo, NULL, &image);
 
 	// Allocate memory for it
-	unsigned dataSize = width * height * 3;
+	unsigned dataSize = width * height * 4;
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(device, image, &memRequirements);
 
@@ -62,23 +63,24 @@ int main() {
 	beginCommands();
 
 	transitionImage(image, VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+			VK_IMAGE_LAYOUT_GENERAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT);
 
 	VkClearColorValue clearColor = {0};
-	memcpy(clearColor.uint32, (uint32_t[4]) {0, 0, 0xFFFFFFFF, 0xFFFFFFFF},
-		sizeof(uint32_t[4]));
-	memset(&clearColor, 255, sizeof(clearColor));
+	memcpy(clearColor.float32, (float[4]) {0, 0, 0.4, 1}, sizeof(uint32_t[4]));
 	VkImageSubresourceRange subresourceRange = {0};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subresourceRange.baseMipLevel = 0;
 	subresourceRange.levelCount = 1;
 	subresourceRange.baseArrayLayer = 0;
 	subresourceRange.layerCount = 1;
-	vkCmdClearColorImage(comBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, &clearColor,
+	vkCmdClearColorImage(comBuffer, image, VK_IMAGE_LAYOUT_GENERAL, &clearColor,
 		1, &subresourceRange);
 
-	transitionImage(image, VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	transitionImage(image, VK_IMAGE_LAYOUT_GENERAL,
+			VK_IMAGE_LAYOUT_GENERAL,
+			VK_ACCESS_HOST_READ_BIT | VK_ACCESS_MEMORY_READ_BIT
+			| VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_ACCESS_TRANSFER_READ_BIT);
 
 	endCommands();
 
@@ -88,10 +90,14 @@ int main() {
 	FILE* img = fopen("image.ppm", "wb");
 	fprintf(img, "P6\n%d %d\n255\n", width, height);
 
-	void* data;
-	vkMapMemory(device, imageMemory, 0, memRequirements.size, 0, &data);
-	fwrite(data, dataSize - sizeof(char[3]), 1, img);
+	char* data;
+	vkMapMemory(device, imageMemory, 0, memRequirements.size, 0, (void*) &data);
+	for (int i = 0; i < dataSize - sizeof(char) * 4; i++) {
+		if ((i + 1) % 4 == 0) continue;
+		fputc(data[i], img);
+	}
 	fputc(255, img);
+	fputc(0, img);
 	fputc(0, img);
 	fputc(0, img);
 	vkUnmapMemory(device, imageMemory);

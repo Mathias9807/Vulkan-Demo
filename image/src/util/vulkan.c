@@ -330,8 +330,9 @@ void submitCommandBuffer() {
 	printf("Done\n");
 }
 
-void transitionImage(VkImage image, VkImageLayout oldLayout,
-		VkImageLayout newLayout) {
+void transitionImage(VkImage image,
+		VkImageLayout oldLayout, VkImageLayout newLayout,
+		VkAccessFlags srcFlags, VkAccessFlags dstFlags) {
 	VkImageMemoryBarrier barrier = {0};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -344,8 +345,8 @@ void transitionImage(VkImage image, VkImageLayout oldLayout,
 	barrier.subresourceRange.levelCount = 1;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = 0;
-	barrier.dstAccessMask = 0;
+	barrier.srcAccessMask = srcFlags;
+	barrier.dstAccessMask = dstFlags;
 	vkCmdPipelineBarrier(
 		comBuffer,
 		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,

@@ -31,7 +31,9 @@ void createCommandBuffer();
 void beginCommands();
 void endCommands();
 void submitCommandBuffer();
-void transitionImage(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout);
+void transitionImage(VkImage image,
+		VkImageLayout oldLayout, VkImageLayout newLayout,
+		VkAccessFlags srcFlags, VkAccessFlags dstFlags);
 void destroyDebugging();
 void destroyInstance();
 void check(VkResult r);
