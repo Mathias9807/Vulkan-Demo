@@ -39,6 +39,8 @@ extern VkImageViewCreateInfo*	swapViewInfos;
 extern unsigned			imageCount;
 extern unsigned			imageIndex;
 
+char* loadFile(const char* path, int* fileSize);
+
 void createInstance(char* name);
 void setupDebugging();
 void getDevice();

@@ -522,6 +522,20 @@ void destroyInstance() {
 	printf("Closed vulkan instance\n");
 }
 
+char* loadFile(const char* path, int* fileSize) {
+	FILE* file = fopen(path, "rb");
+
+	fseek(file, 0L, SEEK_END);
+	int size = ftell(file);
+	rewind(file);
+
+	char* data = calloc(size, 1);
+	fread(data, sizeof(char), size, file);
+
+	*fileSize = size;
+	return data;
+}
+
 void check(VkResult r) {
 	if (r != VK_SUCCESS) {
 		printf("Error on Vulkan call\n");

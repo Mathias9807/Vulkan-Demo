@@ -1,0 +1,6 @@
+#!/bin/sh
+set -x # echo on
+
+glslc src/shader.vert -o shaders/vert.spv
+glslc src/shader.frag -o shaders/frag.spv
+
